@@ -11,16 +11,17 @@
 ?>
 <div class="reports index content">
     <h3><?= __('Report') ?></h3>
-    <?= $this->Form->create(null, ['type' => 'get']) ?>
+    <?= $this->Form->create(null, ['type' => 'get', 'id' => 'reportForm']) ?>
     <fieldset>
         <legend><?= __('Select Period') ?></legend>
-        <?= $this->Form->control('start_date', ['type' => 'date', 'default' => $startDate->format('Y-m-d')]) ?>
-        <?= $this->Form->control('end_date', ['type' => 'date', 'default' => $endDate->format('Y-m-d')]) ?>
+        <?= $this->Form->control('start_date', ['type' => 'date', 'default' => $startDate->format('Y-m-d'), 'id' => 'startDate']) ?>
+        <?= $this->Form->control('end_date', ['type' => 'date', 'default' => $endDate->format('Y-m-d'), 'id' => 'endDate']) ?>
     </fieldset>
     <?= $this->Form->button(__('Submit')) ?>
     <?= $this->Form->end() ?>
 
     <div style="margin-top: 30px;"></div> <!-- Add space between sections -->
+    <?= $this->Html->link(__('Export to Excel'), ['action' => 'export', '?' => ['start_date' => $this->request->getQuery('start_date'), 'end_date' => $this->request->getQuery('end_date')]], ['class' => 'button button-green', 'id' => 'exportButton']) ?>
 
     <h4><?= __('Customers') ?></h4>
     <table>
@@ -78,7 +79,8 @@
                 <th><?= __('Motorcycle') ?></th>
                 <th><?= __('Customer') ?></th>
                 <th><?= __('Transaction Type') ?></th>
-                <th><?= __('Quantity') ?></th>
+                <th><?= __('Transaction Code') ?></th>
+                <th><?= __('Amount') ?></th>
             </tr>
         </thead>
         <tbody>
@@ -88,7 +90,8 @@
                     <td><?= h($transaction->motorcycle->model) ?></td>
                     <td><?= h($transaction->customer->name) ?></td>
                     <td><?= h($transaction->transaction_type) ?></td>
-                    <td><?= $this->Number->format($transaction->quantity) ?></td>
+                    <td><?= h($transaction->transaction_code) ?></td>
+                    <td><?= $this->Number->format($transaction->amount) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

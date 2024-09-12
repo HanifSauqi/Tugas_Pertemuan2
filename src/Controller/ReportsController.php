@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Cake\ORM\TableRegistry;
+use App\Controller\AppController;
+use Cake\Datasource\ConnectionManager;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Cake\I18n\FrozenTime;
-use Cake\Log\Log;
+use Cake\ORM\TableRegistry;
 
 
 /**
@@ -16,16 +19,11 @@ use Cake\Log\Log;
  */
 class ReportsController extends AppController
 {
-    /**
-     * Index method
-     *
-     * @return \Cake\Http\Response|null|void Renders view
-     */
     public function index()
     {
         $startDate = $this->request->getQuery('start_date') ? FrozenTime::parse($this->request->getQuery('start_date')) : FrozenTime::now()->subMonth();
         $endDate = $this->request->getQuery('end_date') ? FrozenTime::parse($this->request->getQuery('end_date')) : FrozenTime::now();
-    
+
         $customer = TableRegistry::getTableLocator()->get('Customer')
             ->find()
             ->where(function ($exp, $q) use ($startDate, $endDate) {
@@ -33,7 +31,7 @@ class ReportsController extends AppController
             })
             ->all()
             ->toArray();
-    
+
         $purchasesQuery = TableRegistry::getTableLocator()->get('Purchases')
             ->find()
             ->contain(['Suppliers', 'Motorcycles'])
@@ -41,7 +39,7 @@ class ReportsController extends AppController
                 return $exp->between('DATE(purchase_date)', $startDate->format('Y-m-d'), $endDate->format('Y-m-d'));
             });
         $purchases = $purchasesQuery->all()->toArray();
-    
+
         $transactionsQuery = TableRegistry::getTableLocator()->get('Transaction')
             ->find()
             ->contain(['Customer', 'Motorcycles'])
@@ -50,30 +48,91 @@ class ReportsController extends AppController
             });
         $transactions = $transactionsQuery->all()->toArray();
 
-    
         $this->set(compact('customer', 'purchases', 'transactions', 'startDate', 'endDate'));
     }
-    
-    
-    
 
-    
-    /**
-     * View method
-     *
-     * @param string|null $id Report id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view($id = null)
+    public function export()
     {
-        $report = $this->Reports->get($id, [
-            'contain' => [],
-        ]);
+        $startDate = $this->request->getQuery('start_date') ? FrozenTime::parse($this->request->getQuery('start_date')) : FrozenTime::now()->subMonth();
+        $endDate = $this->request->getQuery('end_date') ? FrozenTime::parse($this->request->getQuery('end_date')) : FrozenTime::now();
 
-        $this->set(compact('report'));
+        $purchasesQuery = TableRegistry::getTableLocator()->get('Purchases')
+            ->find()
+            ->contain(['Suppliers', 'Motorcycles'])
+            ->where(function ($exp, $q) use ($startDate, $endDate) {
+                return $exp->between('DATE(purchase_date)', $startDate->format('Y-m-d'), $endDate->format('Y-m-d'));
+            });
+        $purchases = $purchasesQuery->all()->toArray();
+
+        $transactionsQuery = TableRegistry::getTableLocator()->get('Transaction')
+            ->find()
+            ->contain(['Customer', 'Motorcycles'])
+            ->where(function ($exp, $q) use ($startDate, $endDate) {
+                return $exp->between('DATE(transaction_date)', $startDate->format('Y-m-d'), $endDate->format('Y-m-d'));
+            });
+        $transactions = $transactionsQuery->all()->toArray();
+
+        $periode = $startDate->format('d F Y') . ' - ' . $endDate->format('d F Y');
+
+        $this->exportToExcel(compact('purchases', 'transactions', 'periode'));
     }
 
+    private function exportToExcel($data)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Report Pembelian dan Transaksi');
+        $sheet->setCellValue('A4', 'Report Pembelian dan Transaksi');
+        $sheet->setCellValue('A5', 'Tanggal');
+        $sheet->setCellValue('B5', $data['periode']);
+
+        // Sheet untuk Pembelian
+        $sheet->setCellValue('A7', 'Laporan Pembelian');
+        $row = 8;
+        $sheet->setCellValue('A' . $row, 'Tanggal');
+        $sheet->setCellValue('B' . $row, 'Model Motor');
+        $sheet->setCellValue('C' . $row, 'Nama Supplier');
+        $sheet->setCellValue('D' . $row, 'Jumlah');
+        $sheet->setCellValue('E' . $row, 'Harga');
+
+        $row = 9;
+        foreach ($data['purchases'] as $purchase) {
+            $sheet->setCellValue('A' . $row, $purchase->purchase_date->i18nFormat('yyyy-MM-dd'));
+            $sheet->setCellValue('B' . $row, $purchase->motorcycle->model);
+            $sheet->setCellValue('C' . $row, $purchase->supplier->name);
+            $sheet->setCellValue('D' . $row, $purchase->quantity);
+            $sheet->setCellValue('E' . $row, $purchase->price);
+            $row++;
+        }
+
+        // Sheet untuk Transaksi
+        $row += 2; // Tambahkan jarak antara tabel pembelian dan transaksi
+        $sheet->setCellValue('A' . $row, 'Laporan Transaksi');
+        $row++;
+        $sheet->setCellValue('A' . $row, 'Tanggal');
+        $sheet->setCellValue('B' . $row, 'Model Motor');
+        $sheet->setCellValue('C' . $row, 'Nama Customer');
+        $sheet->setCellValue('D' . $row, 'Tipe Transaksi');
+        $sheet->setCellValue('E' . $row, 'Kode Transaksi');
+        $sheet->setCellValue('F' . $row, 'Jumlah');
+
+        $row++;
+        foreach ($data['transactions'] as $transaction) {
+            $sheet->setCellValue('A' . $row, $transaction->transaction_date ? $transaction->transaction_date->i18nFormat('yyyy-MM-dd') : '');
+            $sheet->setCellValue('B' . $row, $transaction->motorcycle->model);
+            $sheet->setCellValue('C' . $row, $transaction->customer->name);
+            $sheet->setCellValue('D' . $row, $transaction->transaction_type);
+            $sheet->setCellValue('E' . $row, $transaction->transaction_code);
+            $sheet->setCellValue('F' . $row, $transaction->amount);
+            $row++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . urlencode('report_pembelian_transaksi.xlsx') . '"');
+        $writer->save('php://output');
+        exit;
+    }
     /**
      * Add method
      *

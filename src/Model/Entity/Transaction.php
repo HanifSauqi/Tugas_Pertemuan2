@@ -33,7 +33,8 @@ class Transaction extends Entity
         'customer_id' => true,
         'transaction_type' => true,
         'transaction_date' => true,
-        'quantity' => true,
+        'amount' => true,
         'motorcycle' => true,
+        'transaction_code' => true, // Tambahkan ini
     ];
 }

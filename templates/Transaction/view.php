@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Transaction $transaction
@@ -31,13 +32,21 @@
                     <td><?= $transaction->has('customer') ? h($transaction->customer->name) : '' ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('quantity') ?></th>
-                    <td><?= $this->Number->format($transaction->quantity) ?></td>
+                    <th><?= __('amount') ?></th>
+                    <td><?= $this->Number->format($transaction->amount) ?></td>
                 </tr>
                 <tr>
                     <th><?= __('Transaction Date') ?></th>
                     <td><?= h($transaction->transaction_date) ?></td>
                 </tr>
+                <tr>
+                    <th><?= __('Transaction Code') ?></th>
+                    <td><?= h($transaction->transaction_code) ?></td>
+                </tr>
+                <tr>
+                    <th><?= __('Voucher') ?></th>
+                    <td><?= $this->Voucher->getVoucher($transaction->amount) ?></td> <!-- Gunakan helper di sini -->
+                </tr>   
             </table>
         </div>
     </div>

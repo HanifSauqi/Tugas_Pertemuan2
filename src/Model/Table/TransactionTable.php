@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Model\Table;
@@ -83,9 +84,15 @@ class TransactionTable extends Table
             ->notEmptyDateTime('transaction_date');
 
         $validator
-            ->decimal('quantity')
-            ->requirePresence('quantity', 'create')
-            ->notEmptyString('quantity');
+            ->decimal('amount')
+            ->requirePresence('amount', 'create')
+            ->notEmptyString('amount');
+
+        $validator
+            ->scalar('transaction_code') // Tambahkan ini
+            ->maxLength('transaction_code', 20) // Tambahkan ini
+            ->requirePresence('transaction_code', 'create') // Tambahkan ini
+            ->notEmptyString('transaction_code'); // Tambahkan ini
 
         return $validator;
     }
@@ -101,8 +108,7 @@ class TransactionTable extends Table
     {
         $rules->add($rules->existsIn('motorcycle_id', 'Motorcycles'), ['errorField' => 'motorcycle_id']);
         $rules->add($rules->existsIn('customer_id', 'Customer'), ['errorField' => 'customer_id']);
-    
+
         return $rules;
     }
-    
 }

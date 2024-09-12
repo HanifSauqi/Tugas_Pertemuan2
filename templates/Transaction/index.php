@@ -16,7 +16,8 @@
                     <th><?= $this->Paginator->sort('customer_id') ?></th>
                     <th><?= $this->Paginator->sort('transaction_type') ?></th>
                     <th><?= $this->Paginator->sort('transaction_date') ?></th>
-                    <th><?= $this->Paginator->sort('quantity') ?></th>
+                    <th><?= $this->Paginator->sort('amount') ?></th>
+                    <th><?= $this->Paginator->sort('transaction_code') ?></th>
                     <th class="actions"><?= __('Actions') ?></th>
                 </tr>
             </thead>
@@ -28,7 +29,8 @@
                     <td><?= $transaction->has('customer') ? h($transaction->customer->name) : '' ?></td>
                     <td><?= h($transaction->transaction_type) ?></td>
                     <td><?= h($transaction->transaction_date) ?></td>
-                    <td><?= $this->Number->format($transaction->quantity) ?></td>
+                    <td><?= $this->Number->format($transaction->amount) ?></td>
+                    <td><?= h($transaction->transaction_code) ?></td>
                     <td class="actions">
                         <?= $this->Html->link(__('View'), ['action' => 'view', $transaction->id]) ?>
                         <?= $this->Html->link(__('Edit'), ['action' => 'edit', $transaction->id]) ?>

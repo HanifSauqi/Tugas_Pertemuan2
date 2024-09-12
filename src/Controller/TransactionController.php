@@ -48,14 +48,22 @@ class TransactionController extends AppController
      *
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
      */
+    public function initialize(): void
+    {
+        parent::initialize();
+        $this->loadComponent('TransactionCode');
+        $this->loadModel('Transaction'); // Pastikan model di-load
+    }
+
     public function add()
     {
         $transaction = $this->Transaction->newEmptyEntity();
         if ($this->request->is('post')) {
             $transaction = $this->Transaction->patchEntity($transaction, $this->request->getData());
+            $transaction->transaction_code = $this->TransactionCode->generateCode('PRC');
             if ($this->Transaction->save($transaction)) {
                 $this->Flash->success(__('The transaction has been saved.'));
-    
+
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('The transaction could not be saved. Please, try again.'));

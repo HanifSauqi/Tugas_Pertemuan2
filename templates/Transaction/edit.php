@@ -27,7 +27,7 @@
                     echo $this->Form->control('customer_id', ['options' => $customer]);
                     echo $this->Form->control('transaction_type');
                     echo $this->Form->control('transaction_date');
-                    echo $this->Form->control('quantity');
+                    echo $this->Form->control('amount');
                 ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>

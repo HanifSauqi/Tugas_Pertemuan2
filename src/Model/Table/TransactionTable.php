@@ -41,7 +41,7 @@ class TransactionTable extends Table
         parent::initialize($config);
 
         $this->setTable('transaction');
-        $this->setDisplayField('transaction_type');
+        $this->setDisplayField('id');
         $this->setPrimaryKey('id');
 
         $this->belongsTo('Motorcycles', [
@@ -52,6 +52,16 @@ class TransactionTable extends Table
         $this->belongsTo('Customer', [
             'foreignKey' => 'customer_id',
             'joinType' => 'INNER',
+        ]);
+        $this->belongsTo('Creators', [
+            'className' => 'Users',
+            'foreignKey' => 'created_by',
+            'propertyName' => 'creator'
+        ]);
+        $this->belongsTo('Modifiers', [
+            'className' => 'Users',
+            'foreignKey' => 'modified_by',
+            'propertyName' => 'modifier'
         ]);
     }
 

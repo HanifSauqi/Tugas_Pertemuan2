@@ -1,7 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controller;
+
+use Cake\Datasource\Exception\RecordNotFoundException;
 
 /**
  * Transaction Controller
@@ -22,10 +25,10 @@ class TransactionController extends AppController
             'contain' => ['Motorcycles', 'Customer'],
         ];
         $transactions = $this->paginate($this->Transaction);
-    
+
         $this->set(compact('transactions'));
     }
-    
+
 
     /**
      * View method
@@ -36,11 +39,19 @@ class TransactionController extends AppController
      */
     public function view($id = null)
     {
-        $transaction = $this->Transaction->get($id, [
-            'contain' => ['Motorcycles', 'Customer'],
-        ]);
+        try {
+            $transaction = $this->Transaction->get($id, [
+            'contain' => ['Motorcycles', 'Customer', 'Creators', 'Modifiers']
+            ]);
+            // In src/Controller/ReportsController.php
+            debug($transaction->creator);
+            debug($transaction->modifier);
 
-        $this->set(compact('transaction'));
+            $this->set(compact('transaction'));
+        } catch (RecordNotFoundException $e) {
+            $this->Flash->error(__('Transaction not found.'));
+            return $this->redirect(['action' => 'index']);
+        }
     }
 
     /**
@@ -53,6 +64,7 @@ class TransactionController extends AppController
         parent::initialize();
         $this->loadComponent('TransactionCode');
         $this->loadModel('Transaction'); // Pastikan model di-load
+        $this->loadComponent('Authentication.Authentication');
     }
 
     public function add()
@@ -61,6 +73,8 @@ class TransactionController extends AppController
         if ($this->request->is('post')) {
             $transaction = $this->Transaction->patchEntity($transaction, $this->request->getData());
             $transaction->transaction_code = $this->TransactionCode->generateCode('PRC');
+            $transaction->created_by = $this->request->getAttribute('identity')->getIdentifier();
+            $transaction->modified_by = $this->request->getAttribute('identity')->getIdentifier();
             if ($this->Transaction->save($transaction)) {
                 $this->Flash->success(__('The transaction has been saved.'));
 
@@ -72,16 +86,14 @@ class TransactionController extends AppController
             'keyField' => 'id',
             'valueField' => 'model'
         ])->select(['id', 'model'])->all();
-    
+
         $customer = $this->Transaction->Customer->find('list', [
             'keyField' => 'id',
             'valueField' => 'name'
         ])->select(['id', 'name'])->all();
-    
+
         $this->set(compact('transaction', 'motorcycles', 'customer'));
     }
-    
-
 
     /**
      * Edit method
@@ -97,6 +109,7 @@ class TransactionController extends AppController
         ]);
         if ($this->request->is(['patch', 'post', 'put'])) {
             $transaction = $this->Transaction->patchEntity($transaction, $this->request->getData());
+            $transaction->modified_by = $this->request->getAttribute('identity')->getIdentifier();
             if ($this->Transaction->save($transaction)) {
                 $this->Flash->success(__('The transaction has been saved.'));
 
@@ -108,12 +121,12 @@ class TransactionController extends AppController
             'keyField' => 'id',
             'valueField' => 'model'
         ])->select(['id', 'model'])->all();
-    
+
         $customer = $this->Transaction->Customer->find('list', [
             'keyField' => 'id',
             'valueField' => 'name'
         ])->select(['id', 'name'])->all();
-    
+
         $this->set(compact('transaction', 'motorcycles', 'customer'));
     }
 

@@ -35,6 +35,9 @@ class Transaction extends Entity
         'transaction_date' => true,
         'amount' => true,
         'motorcycle' => true,
-        'transaction_code' => true, // Tambahkan ini
+        'transaction_code' => true,
+        'created_by' => true,
+        'modified_by' => true, 
+
     ];
 }

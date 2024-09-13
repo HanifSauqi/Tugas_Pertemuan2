@@ -49,6 +49,8 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
     $routes->connect('/reports', ['controller' => 'Reports', 'action' => 'index']);
+    $routes->connect('/login', ['controller' => 'Users', 'action' => 'login']);
+    $routes->connect('/register', ['controller' => 'Users', 'action' => 'register']);
 
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*

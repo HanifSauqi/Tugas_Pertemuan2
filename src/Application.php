@@ -24,9 +24,16 @@ use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\MiddlewareQueue;
+use Cake\Routing\Router;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
+use Psr\Http\Message\ServerRequestInterface;
+
 
 /**
  * Application setup class.
@@ -34,7 +41,7 @@ use Cake\Routing\Middleware\RoutingMiddleware;
  * This defines the bootstrapping logic and middleware layers you
  * want to use in your application.
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
      * Load all the application configuration and bootstrap logic.
@@ -65,6 +72,7 @@ class Application extends BaseApplication
 
         // Load more plugins here
         $this->addPlugin('Migrations');
+        $this->addPlugin('Authentication'); // Tambahkan plugin Authentication
     }
 
     /**
@@ -90,6 +98,8 @@ class Application extends BaseApplication
             // caching in production could improve performance.
             // See https://github.com/CakeDC/cakephp-cached-routing
             ->add(new RoutingMiddleware($this))
+            ->add(new AuthenticationMiddleware($this)) // Tambahkan middleware Authentication
+
 
             // Parse various types of encoded request bodies so that they are
             // available as array through $request->getData()
@@ -103,6 +113,32 @@ class Application extends BaseApplication
             ]));
 
         return $middlewareQueue;
+    }
+    
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    {
+        $authenticationService = new AuthenticationService([
+            'unauthenticatedRedirect' => '/users/login',
+            'queryParam' => 'redirect',
+        ]);
+
+        // Konfigurasi autentikasi
+        $authenticationService->loadIdentifier('Authentication.Password', [
+            'fields' => [
+                'username' => ['username', 'email'],
+                'password' => 'password',
+            ]
+        ]);
+        $authenticationService->loadAuthenticator('Authentication.Session');
+        $authenticationService->loadAuthenticator('Authentication.Form', [
+            'fields' => [
+                'username' => ['username', 'email'],
+                'password' => 'password',
+            ],
+            'loginUrl' => '/users/login',
+        ]);
+
+        return $authenticationService;
     }
 
     /**

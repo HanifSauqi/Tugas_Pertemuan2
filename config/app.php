@@ -421,5 +421,8 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        'timeout' => 30, // Waktu kedaluwarsa dalam menit
+        'cookieName' => 'CAKEPHP',
+        'cookieTimeout' => 1440, // Waktu kedaluwarsa cookie dalam menit
     ],
 ];
